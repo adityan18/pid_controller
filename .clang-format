@@ -1,0 +1,69 @@
+#Common Settings
+TabWidth: 4
+IndentWidth: 4
+UseTab: Never
+BasedOnStyle: Microsoft
+
+---
+Language: Cpp
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionPointers: true
+  AlignCompound: true
+  PadOperators: true
+
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
+AlignAfterOpenBracket: true
+AlignEscapedNewlines: Left
+AlignOperands: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+# AllowConsecutiveBitFields: false
+
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+
+BinPackArguments: true
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterExternBlock: true
+  AfterUnion: true
+  BeforeWhile: false
+  BeforeElse: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+
+# BraceInitializerIndentWidth: 4
+BreakBeforeInlineASMColon: Always
+BreakStringLiterals: false
+ContinuationIndentWidth: 4
+ColumnLimit: 150
+IncludeBlocks: Regroup
+IndentCaseLabels: false
+IndentExternBlock: false
+# IndentBraces: true
+InsertNewlineAtEOF: true
+PointerAlignment: Right
+QualifierAlignment: Right
+ReflowComments: false
+SeparateDefinitionBlocks: Leave
+SortIncludes: true
+SpaceBeforeParens: ControlStatementsExceptControlMacros

@@ -3,3 +3,8 @@ RTE/
 Objects/
 Listings/
 DebugConfig/
+*uvguix*
+.scvd
+
+# vscode
+.vscode/
