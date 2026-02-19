@@ -1,4 +1,5 @@
 #Common Settings
+
 TabWidth: 4
 IndentWidth: 4
 UseTab: Never
@@ -20,15 +21,22 @@ AlignConsecutiveMacros:
   AcrossEmptyLines: false
   AcrossComments: false
 
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  PadOperators: true
+
 AlignAfterOpenBracket: true
-AlignEscapedNewlines: Left
-AlignOperands: true
+AlignEscapedNewlines: Right
+AlignOperands: Align
 AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-# AllowConsecutiveBitFields: false
+AlignConsecutiveBitFields: false
 
 AlignTrailingComments:
   Kind: Always
@@ -39,31 +47,43 @@ BinPackParameters: false
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel: true
-  AfterControlStatement: true
+  AfterControlStatement: Always
   AfterEnum: true
   AfterFunction: true
-  AfterNamespace: true
   AfterStruct: true
-  AfterExternBlock: true
   AfterUnion: true
+  AfterExternBlock: false
   BeforeWhile: false
-  BeforeElse: false
+  BeforeElse: true
+  IndentBraces: true
   SplitEmptyFunction: true
   SplitEmptyRecord: true
 
-# BraceInitializerIndentWidth: 4
+BracedInitializerIndentWidth: 4
 BreakBeforeInlineASMColon: Always
 BreakStringLiterals: false
 ContinuationIndentWidth: 4
 ColumnLimit: 150
 IncludeBlocks: Regroup
-IndentCaseLabels: false
-IndentExternBlock: false
-# IndentBraces: true
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: NoIndent
+IndentPPDirectives: BeforeHash
+InsertBraces: true
 InsertNewlineAtEOF: true
 PointerAlignment: Right
-QualifierAlignment: Right
+QualifierAlignment: Left
+ReferenceAlignment: Left
 ReflowComments: false
 SeparateDefinitionBlocks: Leave
 SortIncludes: true
+SpaceAfterCStyleCast: false
+SpaceAroundPointerQualifiers: Default
 SpaceBeforeParens: ControlStatementsExceptControlMacros
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false

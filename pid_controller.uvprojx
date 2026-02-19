@@ -317,7 +317,7 @@
             <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
-            <OneElfS>1</OneElfS>
+            <OneElfS>0</OneElfS>
             <Strict>0</Strict>
             <EnumInt>0</EnumInt>
             <PlainCh>0</PlainCh>
@@ -337,7 +337,7 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>-g3</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath>.\include</IncludePath>
@@ -389,6 +389,11 @@
               <FileType>1</FileType>
               <FilePath>.\source\pid_init.c</FilePath>
             </File>
+            <File>
+              <FileName>pid_mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\source\pid_mpu6050.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -406,6 +411,12 @@
 
   <RTE>
     <apis>
+      <api Capiversion="2.4.0" Cclass="CMSIS Driver" Cgroup="I2C" exclusive="0">
+        <package name="CMSIS" schemaVersion="1.7.53" url="https://www.keil.com/pack/" vendor="ARM" version="6.3.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </api>
       <api Capiversion="2.4.0" Cclass="CMSIS Driver" Cgroup="USART" exclusive="0">
         <package name="CMSIS" schemaVersion="1.7.53" url="https://www.keil.com/pack/" vendor="ARM" version="6.3.0"/>
         <targetInfos>
@@ -446,6 +457,12 @@
       </component>
       <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.9.0" condition="RTX5" ymlID="CMSIS:RTOS2:Keil RTX5&amp;Library">
         <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </component>
+      <component Capiversion="2.2" Cclass="CMSIS Driver" Cgroup="I2C" Cvendor="Keil" Cversion="2.12" condition="STM32F4 CMSIS_Driver I2C" ymlID="CMSIS Driver:I2C">
+        <package name="STM32F4xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.17.1"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
         </targetInfos>
@@ -504,7 +521,7 @@
           <targetInfo name="Target_1"/>
         </targetInfos>
       </component>
-      <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="UART" Cvendor="Keil" Cversion="1.8.1" condition="STM32F4 HAL DMA" ymlID="Device:STM32Cube HAL:UART">
+      <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="TIM" Cvendor="Keil" Cversion="1.8.1" condition="STM32F4 HAL DMA" ymlID="Device:STM32Cube HAL:TIM">
         <package name="STM32F4xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.17.1"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
