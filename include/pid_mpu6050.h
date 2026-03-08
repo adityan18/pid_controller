@@ -25,7 +25,7 @@ extern ARM_DRIVER_I2C Driver_I2C1;
 #define GYRO_MEAS    0x43u
 
 /* BITM for accelerometer config and gyroscope config: Bits[4:3] */
-#define BITM_A_AND_G_FSEL_CONFIG 0x16u
+#define BITM_A_AND_G_FSEL_CONFIG 0x18u
 #define BITP_A_AND_G_FSEL_CONFIG 0x03u
 
 /* Value represents the sensitivity in LSB/g. */
@@ -81,8 +81,19 @@ typedef struct __attribute__((packed))
     uint16_t gx;
     uint16_t gy;
     uint16_t gz;
-} mpu6050_data_t;
+} mpu6050_raw_data_t;
 
-mpu6050_status_t pid_mpu6050_Init(void);
+typedef struct __attribute__((packed))
+{
+    float ax;
+    float ay;
+    float az;
+    float gx;
+    float gy;
+    float gz;
+} mpu6050_processed_data_t;
+
+mpu6050_status_t         pid_mpu6050_Init(void);
+mpu6050_processed_data_t pid_mpu6050_ProcessRawSensorData(mpu6050_raw_data_t raw_data);
 
 #endif /* PID_MPU6050 */

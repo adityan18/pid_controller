@@ -1,10 +1,25 @@
+#include "pid_common.h"
+#include "pid_logger.h"
 #include "pid_mpu6050.h"
-#include "stm32f4xx_hal.h"
-#include "string.h"
+#include "pid_pwm.h"
+
 #include <Driver_USART.h>
-#include <cmsis_os2.h>
-#include <stdint.h>
+#include <stm32f4xx_hal.h.>
 #include <system_stm32f4xx.h>
+
+#include <stdint.h>
+#include <string.h>
+
+/************************ D A T A ************************/
+
+osMessageQueueId_t sensor_to_actuator_raw_queue;
+osMessageQueueId_t sensor_to_actuator_processed_queue;
+
+/************************ P R O T O T Y P E ************************/
+
+/************************ P U B L I C  F U N C T I O N S ************************/
+
+/************************ P R I V A T E  F U N C T I O N S ************************/
 
 extern ARM_DRIVER_USART Driver_USART1;
 
@@ -65,11 +80,6 @@ void pwm_generate()
 
     HAL_GPIO_Init(GPIOA, &gpio_a_config);
 
-    (void)memset(&gpio_a_config, 0x0, sizeof(gpio_a_config));
-    gpio_a_config.Pin = GPIO_PIN_11 | GPIO_PIN_12;
-    gpio_a_config.Mode = GPIO_MODE_INPUT;
-    HAL_GPIO_Init(GPIOA, &gpio_a_config);
-
     uint32_t CCR1_res = 0x1F4;
     TIM3->PSC = 16 - 1;
     TIM3->ARR = 20000 - 1; /* T = 20ms */
@@ -91,14 +101,61 @@ void pwm_generate()
             ;
     }
 }
+
+void init_Clock(void)
+{
+    // 1. Enable HSE
+    RCC->CR |= RCC_CR_HSEON;
+    while (!(RCC->CR & RCC_CR_HSERDY))
+        ;
+
+    // 2. Configure PLL
+    RCC->PLLCFGR = (25 << RCC_PLLCFGR_PLLM_Pos) |  // PLLM = 25
+                   (336 << RCC_PLLCFGR_PLLN_Pos) | // PLLN = 336
+                   (1 << RCC_PLLCFGR_PLLP_Pos) |   // PLLP = 4 (00=2, 01=4)
+                   RCC_PLLCFGR_PLLSRC_HSE;         // HSE as source
+
+    // 3. Enable PLL
+    RCC->CR |= RCC_CR_PLLON;
+    while (!(RCC->CR & RCC_CR_PLLRDY))
+        ;
+
+    // 4. Configure Flash latency (VERY IMPORTANT)
+    FLASH->ACR = FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_2WS; // 84MHz requires 2 wait states
+
+    // 5. Set prescalers
+    RCC->CFGR |= RCC_CFGR_HPRE_DIV1;  // AHB = 84 MHz
+    RCC->CFGR |= RCC_CFGR_PPRE1_DIV2; // APB1 = 42 MHz
+    RCC->CFGR |= RCC_CFGR_PPRE2_DIV1; // APB2 = 84 MHz
+
+    // 6. Switch to PLL
+    RCC->CFGR |= RCC_CFGR_SW_PLL;
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL)
+        ;
+}
+
 int main()
 {
 
+    init_Clock();
     SystemCoreClockUpdate();
 
     osKernelInitialize();
+    osMessageQueueAttr_t sensor_to_actuator_raw_queue_attr = {
+        .name = "sensor_to_actuator_raw_queue",
+    };
+    osMessageQueueAttr_t sensor_to_actuator_processed_queue_attr = {
+        .name = "sensor_to_actuator_processed_queue",
+    };
+    sensor_to_actuator_raw_queue =
+        osMessageQueueNew(10, sizeof(pid_sensor_data_queue_t), &sensor_to_actuator_raw_queue_attr);
+    sensor_to_actuator_processed_queue =
+        osMessageQueueNew(10, sizeof(pid_sensor_data_queue_t), &sensor_to_actuator_processed_queue_attr);
+
     init_Gpio();
     pid_mpu6050_Init();
+    pid_logger_Init();
+    pid_pwm_Init();
     //    pwm_generate();
 
     osKernelStart();

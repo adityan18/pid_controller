@@ -1,6 +1,6 @@
 #include "pid_mpu6050.h"
+#include "pid_common.h"
 
-#include <cmsis_os2.h>
 #include <string.h>
 
 /************************ D A T A ************************/
@@ -23,6 +23,9 @@ float gyro_sensitivity[] = {
 };
 
 static osThreadId_t mpu6050_sample_sensor_data_thread_id;
+static osEventFlagsId_t mpu6050_sample_sensor_data_thread_event_flags_id;
+
+extern osMessageQueueId_t sensor_to_actuator_raw_queue;
 /************************ P R O T O T Y P E ************************/
 
 static mpu6050_status_t mpu6050_SetupI2C(void);
@@ -46,6 +49,10 @@ mpu6050_status_t pid_mpu6050_Init(void)
     {
         status = MPU6050_ERROR;
     }
+    else if (mpu6050_ConfigurePwr(0x01) != MPU6050_OK)
+    {
+        status = MPU6050_ERROR;
+    }
     else if (mpu6050_ConfigureSensor(MPU6050_ACCEL, af_sel) != MPU6050_OK)
     {
         status = MPU6050_ERROR;
@@ -54,10 +61,7 @@ mpu6050_status_t pid_mpu6050_Init(void)
     {
         status = MPU6050_ERROR;
     }
-    else if (mpu6050_ConfigurePwr(0x00) != MPU6050_OK)
-    {
-        status = MPU6050_ERROR;
-    }
+
     else if (mpu6060_RtosInit() != true)
     {
         status = MPU6050_RTOS_ERROR;
@@ -70,6 +74,21 @@ mpu6050_status_t pid_mpu6050_Init(void)
     return status;
 }
 
+mpu6050_processed_data_t pid_mpu6050_ProcessRawSensorData(mpu6050_raw_data_t raw_data)
+{
+    mpu6050_processed_data_t processed_data;
+
+    processed_data.ax = (float)raw_data.ax / accel_sensitivity[af_sel];
+    processed_data.ay = (float)raw_data.ay / accel_sensitivity[af_sel];
+    processed_data.az = (float)raw_data.az / accel_sensitivity[af_sel];
+
+    processed_data.gx = (float)raw_data.gx / gyro_sensitivity[gf_sel];
+    processed_data.gy = (float)raw_data.gy / gyro_sensitivity[gf_sel];
+    processed_data.gz = (float)raw_data.gz / gyro_sensitivity[gf_sel];
+
+    return processed_data;
+}
+
 /************************ P R I V A T E  F U N C T I O N S ************************/
 
 static void mpu6060_I2CCallback(uint32_t event)
@@ -78,7 +97,7 @@ static void mpu6060_I2CCallback(uint32_t event)
     switch (event)
     {
         case ARM_I2C_EVENT_TRANSFER_DONE: {
-            osThreadFlagsSet(mpu6050_sample_sensor_data_thread_id, MPU6050_I2C_TRANSFER_COMPLETE_FLAG);
+            osEventFlagsSet(mpu6050_sample_sensor_data_thread_event_flags_id, MPU6050_I2C_TRANSFER_COMPLETE_FLAG);
             break;
         }
         case ARM_I2C_EVENT_TRANSFER_INCOMPLETE: /* If received abort and retry */
@@ -86,7 +105,7 @@ static void mpu6060_I2CCallback(uint32_t event)
         case ARM_I2C_EVENT_SLAVE_TRANSMIT: /* Always operates in master mode, not expected */
         case ARM_I2C_EVENT_GENERAL_CALL: /* Always operates in master mode, not expected */
         default: {
-            osThreadFlagsSet(mpu6050_sample_sensor_data_thread_id, MPU6050_OTHER_I2C_EVENT_FLAG);
+            osEventFlagsSet(mpu6050_sample_sensor_data_thread_event_flags_id, MPU6050_OTHER_I2C_EVENT_FLAG);
             break;
         }
     }
@@ -169,9 +188,30 @@ static mpu6050_status_t mpu6050_ConfigureSensor(mpu6050_sensor_t sensor, mpu6050
     }
     /* clang-format on */
 
-    uint8_t sensor_config = (uint8_t)fsel << BITP_A_AND_G_FSEL_CONFIG;
+    /* Read Configuration */
+    uint8_t read_config[1u] = {0u};
+    Driver_I2C1.MasterTransmit(MPU6050_ADDR, &config_reg, 1u, true);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+    Driver_I2C1.MasterReceive(MPU6050_ADDR, read_config, 1u, false);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+
+    /* Write back the config with new FSEL */
+    uint8_t sensor_config = (read_config[0u] & ~BITM_A_AND_G_FSEL_CONFIG) | ((uint8_t)fsel << BITP_A_AND_G_FSEL_CONFIG);
     uint8_t tx_array[2u] = {config_reg, sensor_config};
     Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[0u], sizeof(tx_array), false);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+
+    Driver_I2C1.MasterTransmit(MPU6050_ADDR, &config_reg, 1u, true);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+    Driver_I2C1.MasterReceive(MPU6050_ADDR, read_config, 1u, false);
     while (Driver_I2C1.GetStatus().busy)
     {
     };
@@ -180,8 +220,32 @@ static mpu6050_status_t mpu6050_ConfigureSensor(mpu6050_sensor_t sensor, mpu6050
 
 static mpu6050_status_t mpu6050_ConfigurePwr(uint8_t pwr_cfg)
 {
+    /* Read Pwr Configuration */
     uint8_t tx_array[2u] = {PWR_MGMT_1, pwr_cfg};
+    uint8_t read_config[1u] = {0u};
+    Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[0u], 1u, true);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+    Driver_I2C1.MasterReceive(MPU6050_ADDR, read_config, 1u, false);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+
+    tx_array[1u] = (pwr_cfg & 0xFF);
     Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[0u], sizeof(tx_array), false);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+
+	for(uint8_t i = 0; i < 255; i++);
+
+    read_config[0u] = 0u;
+    Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[0u], 1u, true);
+    while (Driver_I2C1.GetStatus().busy)
+    {
+    };
+    Driver_I2C1.MasterReceive(MPU6050_ADDR, read_config, 1u, false);
     while (Driver_I2C1.GetStatus().busy)
     {
     };
@@ -196,6 +260,11 @@ static bool mpu6060_RtosInit(void)
     {
         thread_creation_successful = true;
     }
+
+    osEventFlagsAttr_t event_flags_attr = {
+        .name = "mpu6050_sample_sensor_data_thread_event_flags",
+    };
+    mpu6050_sample_sensor_data_thread_event_flags_id = osEventFlagsNew(&event_flags_attr);
     return thread_creation_successful;
 }
 
@@ -207,7 +276,11 @@ static void mpu6050_ReadSensorDataTask(void *arg)
         static uint8_t tx_array[2u] = {ACCEL_MEAS, GYRO_MEAS};
         /* AX_H, AX_L, AY_H, AY_L, AZ_H, AZ_L, GX_H, GX_L, GY_H, GY_L, GZ_H, GZ_L */
         static uint16_t rx_array[6u] = {0u};
-        mpu6050_data_t sensor_data = {0u};
+        mpu6050_raw_data_t sensor_data = {0u};
+
+        /* Clear any outstanding flags */
+        osEventFlagsClear(mpu6050_sample_sensor_data_thread_event_flags_id,
+                          MPU6050_I2C_TRANSFER_COMPLETE_FLAG | MPU6050_OTHER_I2C_EVENT_FLAG);
 
         for (uint8_t i = 0u; i < 2u; i++)
         {
@@ -215,22 +288,14 @@ static void mpu6050_ReadSensorDataTask(void *arg)
             uint32_t os_flags;
 
             Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[i], 1u, true);
-            os_flags = osThreadFlagsWait(MPU6050_I2C_TRANSFER_COMPLETE_FLAG | MPU6050_OTHER_I2C_EVENT_FLAG,
-                                         osFlagsWaitAny, osWaitForever);
-            if ((os_flags & MPU6050_OTHER_I2C_EVENT_FLAG) != 0u)
-            {
-                sensor_read_successful = false;
-                break;
-            }
+            os_flags = osEventFlagsWait(mpu6050_sample_sensor_data_thread_event_flags_id,
+                                        MPU6050_I2C_TRANSFER_COMPLETE_FLAG | MPU6050_OTHER_I2C_EVENT_FLAG,
+                                        osFlagsWaitAny, osWaitForever);
 
             Driver_I2C1.MasterReceive(MPU6050_ADDR, (uint8_t *)&rx_array[3u * i], 6u, false);
-            os_flags = osThreadFlagsWait(MPU6050_I2C_TRANSFER_COMPLETE_FLAG | MPU6050_OTHER_I2C_EVENT_FLAG,
-                                         osFlagsWaitAny, osWaitForever);
-            if ((os_flags & MPU6050_OTHER_I2C_EVENT_FLAG) != 0u)
-            {
-                sensor_read_successful = false;
-                break;
-            }
+            os_flags = osEventFlagsWait(mpu6050_sample_sensor_data_thread_event_flags_id,
+                                        MPU6050_I2C_TRANSFER_COMPLETE_FLAG | MPU6050_OTHER_I2C_EVENT_FLAG,
+                                        osFlagsWaitAny, osWaitForever);
         }
 
         if (sensor_read_successful == true)
@@ -242,6 +307,13 @@ static void mpu6050_ReadSensorDataTask(void *arg)
             }
 
             (void)memcpy(&sensor_data, &rx_array[0u], sizeof(sensor_data));
+
+            pid_sensor_data_queue_t queue_data = {
+                .index = 0u,
+                .sensor_data = sensor_data,
+            };
+
+            osMessageQueuePut(sensor_to_actuator_raw_queue, &queue_data, NULL, 0u);
         }
     }
 }
