@@ -49,7 +49,7 @@ mpu6050_status_t pid_mpu6050_Init(void)
     {
         status = MPU6050_ERROR;
     }
-    else if (mpu6050_ConfigurePwr(0x01) != MPU6050_OK)
+    else if (mpu6050_ConfigurePwr(0x05) != MPU6050_OK)
     {
         status = MPU6050_ERROR;
     }
@@ -238,17 +238,6 @@ static mpu6050_status_t mpu6050_ConfigurePwr(uint8_t pwr_cfg)
     {
     };
 
-	for(uint8_t i = 0; i < 255; i++);
-
-    read_config[0u] = 0u;
-    Driver_I2C1.MasterTransmit(MPU6050_ADDR, &tx_array[0u], 1u, true);
-    while (Driver_I2C1.GetStatus().busy)
-    {
-    };
-    Driver_I2C1.MasterReceive(MPU6050_ADDR, read_config, 1u, false);
-    while (Driver_I2C1.GetStatus().busy)
-    {
-    };
     return MPU6050_OK;
 }
 
@@ -275,7 +264,7 @@ static void mpu6050_ReadSensorDataTask(void *arg)
     {
         static uint8_t tx_array[2u] = {ACCEL_MEAS, GYRO_MEAS};
         /* AX_H, AX_L, AY_H, AY_L, AZ_H, AZ_L, GX_H, GX_L, GY_H, GY_L, GZ_H, GZ_L */
-        static uint16_t rx_array[6u] = {0u};
+        static int16_t rx_array[6u] = {0u};
         mpu6050_raw_data_t sensor_data = {0u};
 
         /* Clear any outstanding flags */

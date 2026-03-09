@@ -75,12 +75,12 @@ typedef enum
 
 typedef struct __attribute__((packed))
 {
-    uint16_t ax;
-    uint16_t ay;
-    uint16_t az;
-    uint16_t gx;
-    uint16_t gy;
-    uint16_t gz;
+    int16_t ax;
+    int16_t ay;
+    int16_t az;
+    int16_t gx;
+    int16_t gy;
+    int16_t gz;
 } mpu6050_raw_data_t;
 
 typedef struct __attribute__((packed))
