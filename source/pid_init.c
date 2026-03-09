@@ -81,7 +81,7 @@ void pwm_generate()
     HAL_GPIO_Init(GPIOA, &gpio_a_config);
 
     uint32_t CCR1_res = 0x1F4;
-    TIM3->PSC = 16 - 1;
+    TIM3->PSC = 84 - 1;
     TIM3->ARR = 20000 - 1; /* T = 20ms */
     TIM3->CCR1 = CCR1_res; /* DC = 3ms */
 
@@ -156,7 +156,7 @@ int main()
     pid_mpu6050_Init();
     pid_logger_Init();
     pid_pwm_Init();
-    //    pwm_generate();
+    // pwm_generate();
 
     osKernelStart();
 
