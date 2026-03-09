@@ -353,7 +353,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <ClangAsOpt>1</ClangAsOpt>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -393,6 +393,16 @@
               <FileName>pid_mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\source\pid_mpu6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\source\pid_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid_logger.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\source\pid_logger.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -615,14 +625,5 @@
       </file>
     </files>
   </RTE>
-
-  <LayerInfo>
-    <Layers>
-      <Layer>
-        <LayName>pid_controller</LayName>
-        <LayPrjMark>1</LayPrjMark>
-      </Layer>
-    </Layers>
-  </LayerInfo>
 
 </Project>

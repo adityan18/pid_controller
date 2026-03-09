@@ -8,3 +8,4 @@ DebugConfig/
 
 # vscode
 .vscode/
+.venv/
